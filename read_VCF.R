@@ -63,7 +63,7 @@ read_VCF <- function(file, f_QUAL = 0, f_AD = 0, output_file = "",
   cat(sprintf("Samples: %i\n", n_sample))
   if (sample_name[1] != "" & length(sample_name) != n_sample){
     stop("Incorrect sample names. Please indicate the name of the samples 
-         with "sample_name" option.")
+         with sample_name option.")
   }
 
   for(i in 10:n_col_read){
