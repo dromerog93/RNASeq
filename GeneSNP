@@ -1,0 +1,76 @@
+GeneSNP <- function(bed, vcf, fasta, filename, n_threads = 1){
+    require(seqinr)
+    source("SNPanalysis.R")
+    source("translate_CDS.R")
+    source("reverse_DNA.R")
+    aa_df <- read.delim("aa_df.dat", sep = "\t")
+    ngenes <- nrow(bed)
+
+    require(foreach)
+    require(parallel)
+    cluster <- parallel::makeCluster(as.integer(n_threads), type = "FORK")
+    doParallel::registerDoParallel(cl = cluster)
+    vcf_genes <- foreach(i = 1:ngenes, .combine = rbind) %dopar% {
+	    c(bed[i, 4],
+            paste(seqinr::getSequence(fasta[bed[i, 4]])[[1]], collapse = ""),
+            SNPanalysis(bed[i, ], vcf, paste(seqinr::getSequence(fasta[bed[i, 4]])[[1]], collapse = "")))
+    }
+    
+    vcf_genes <- as.data.frame(vcf_genes)
+    colnames(vcf_genes) <- c("gene","seq","seqmut")
+    ngenes <- nrow(vcf_genes)
+
+    orfs <- foreach(i = 1:ngenes, .combine = rbind) %dopar% {
+	    if(bed[bed$gene == vcf_genes$gene[i], 6] == "-"){
+		    translate_CDS(reverse_dna(vcf_genes[i, "seq"]))
+	    } else {
+    		translate_CDS(vcf_genes[i, "seq"])
+    	}
+    }
+    orfsmut <- foreach(i = 1:ngenes, .combine = rbind) %dopar% {
+	    if(bed[bed$gene == vcf_genes$gene[i], 6] == "-"){
+		    translate_CDS(reverse_dna(vcf_genes[i, "seqmut"]))
+	    } else {
+    		translate_CDS(vcf_genes[i, "seqmut"])
+    	}
+    }
+
+    vcf_genes$orf <- orfs
+    vcf_genes$orfmut <- orfsmut
+
+    write(c(paste(">", vcf_genes$gene[1], sep = ""), vcf_genes$seq[1]), paste(filename, "fasta", sep = "."))
+    write(c(paste(paste(">", vcf_genes$gene[1], sep = ""), "_mut", sep = ""), vcf_genes$seqmut[1]), paste(filename, "fasta", sep = "."), append = TRUE)
+    for (i in 2:nrow(vcf_genes)) {
+        if(!(identical(vcf_genes$seq[i],vcf_genes$seqmut[i]))){
+            write(c(paste(">",vcf_genes$gene[i],sep=""), vcf_genes$seq[i]), paste(filename, "fasta", sep = "."), append = TRUE)
+            write(c(paste(paste(">",vcf_genes$gene[i],sep=""),"_mut",sep=""), vcf_genes$seqmut[i]), file = paste(filename, "fasta", sep = "."), append = TRUE)
+        }
+    }
+
+
+    write(c(paste(">", vcf_genes$gene[1], sep = ""), vcf_genes$orf[1]), paste(filename, "pep", sep = "."))
+    write(c(paste(paste(">", vcf_genes$gene[1], sep = ""), "_mut", sep = ""), vcf_genes$orfmut[1]), paste(filename, "pep", sep = "."), append = TRUE)
+    for (i in 2:nrow(vcf_genes)) {
+        if(!(identical(vcf_genes$orf[i],vcf_genes$orfmut[i]))){
+            write(c(paste(">",vcf_genes$gene[i],sep=""), vcf_genes$orf[i]), paste(filename, "pep", sep = "."), append = TRUE)
+            write(c(paste(paste(">",vcf_genes$gene[i],sep=""),"_mut",sep=""), vcf_genes$orfmut[i]), file = paste(filename, "pep", sep = "."), append = TRUE)
+        }
+    }
+
+    for (i in 1:nrow(vcf_genes)) {
+        vcf_genes$length[i] <- nchar(vcf_genes$orf[i])
+        orf_s <- str_split(vcf_genes$orf[i],"")[[1]]
+        orfmut_s <- str_split(vcf_genes$orfmut[i],"")[[1]]
+        vcf_genes$diff[i] <- sum(!(orf_s == orfmut_s))
+        score_aa <- 0
+        for (j in 1:length(orf_s)) {
+            score_aa <- score_aa + as.integer(aa_df[(aa_df$Var1 == orf_s[j] & aa_df$Var2 == orfmut_s[j]), "Value"])
+        }
+        vcf_genes$score[i] <- score_aa
+    }
+
+
+    write.table(vcf_genes[, c(1, 6:8)], file = paste(filename, "dat", sep = "."), sep = "\t", row.names = FALSE, quote = FALSE)
+    stopCluster(cluster)
+    return(vcf_genes)
+}
