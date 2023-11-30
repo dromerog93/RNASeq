@@ -70,6 +70,7 @@ read_VCF <- function(file, f_QUAL = 0, f_AD = 0, output_file = "",
     if (sample_name == ""){
         if(substr(namescol_df[i], nchar(namescol_df[i]) - 3, nchar(namescol_df[i])) == ".bam"){
             namescol_df[i] <- substr(namescol_df[i], 1, nchar(namescol_df[i]) - 4)
+            sample_name[i - 9] <- substr(namescol_df[i], 1, nchar(namescol_df[i]) - 4)
         }
     } else {
         namescol_df[i] <- sample_name[i - 9]
@@ -137,7 +138,7 @@ read_VCF <- function(file, f_QUAL = 0, f_AD = 0, output_file = "",
   if(stats){
     cat(sprintf("SNP: %i\n",sum(grepl("SNP", vcf_df_output$VARIANT))))
     cat(sprintf("InDel: %i\n",sum(grepl("INDEL", vcf_df_output$VARIANT))))
-    for(i in 1:n_muestras){
+    for(i in 1:n_sample){
         cat(sprintf("Sample %s:\n", namescol_df[9 + i]))
         vcf_df_output[, paste("Index", sample_name[i], sep = "_")] <- vcf_df_output[, 6 + (2 * i)]/(vcf_df_output[, 5 + (2 * i)] + vcf_df_output[, 6 + (2 * i)])
         cat(sprintf("Variations (Index > 0.6): %i\n", sum(vcf_df_output[, paste("Index", sample_name[i], sep = "_")] > 0.6)))
