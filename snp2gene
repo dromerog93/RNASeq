@@ -1,0 +1,13 @@
+snp2gene <- function(exon_bed, snp) {
+    nexon <- nrow(exon_bed)
+    nsnp <- nrow(snp)
+    for (j in 1:nsnp){
+        for (i in 1:nexon){
+            if (snp$POS[j] > exon_bed[i, "start"] && snp$POS[j] <= exon_bed[i, "end"]) {
+                snp$genepos[j] <- snp$POS[j] - exon_bed[i, "start"] + exon_bed[i, "pos_exon"]
+                snp$exon[j] <- exon_bed[i, "name"]
+            }
+        }
+    }
+    return(snp)
+}
