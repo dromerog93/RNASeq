@@ -1,0 +1,13 @@
+SNPanalysis <- function(bed, snp, seq){
+    source("bed2exon.R")
+    source("snp2gene.R")
+    source("seqmut.R")
+
+    exon <- bed2exon(bed)
+    snp_gene <- snp2gene(exon, snp, as.character(bed[4]), filter = TRUE)
+    if (class(snp_gene) == "NULL") {
+	return(seq)
+    } else {
+        return(seqmut(seq, snp_gene))
+    }
+}
