@@ -1,13 +1,30 @@
-snp2gene <- function(exon_bed, snp) {
+snp2gene <- function(exon_bed, snp, gene_name = "UNK", filter = FALSE) {
     nexon <- nrow(exon_bed)
+    snp <- subset(snp, CHROM == exon_bed$chrom[1] & POS >= min(exon_bed$start) & POS <= max(exon_bed$end))
     nsnp <- nrow(snp)
+    if (nsnp == 0) {
+	message(sprintf("There are no mutations for %s", gene_name))
+	return()
+    }
     for (j in 1:nsnp){
+	check_snp <- 0
         for (i in 1:nexon){
             if (snp$POS[j] > exon_bed[i, "start"] && snp$POS[j] <= exon_bed[i, "end"]) {
                 snp$genepos[j] <- snp$POS[j] - exon_bed[i, "start"] + exon_bed[i, "pos_exon"]
                 snp$exon[j] <- exon_bed[i, "name"]
+		snp$gene[j] <- gene_name
+		check_snp <- 1
+		break
             }
         }
+	if (check_snp == 0) {
+		snp$genepos[j] <- -1
+        	snp$exon[j] <- "out"
+	}
     }
-    return(snp)
+    if (filter) {
+	return(subset(snp, exon != "out"))
+    } else {
+	return(snp)
+    }
 }
