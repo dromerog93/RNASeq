@@ -139,10 +139,11 @@ read_VCF <- function(file, f_QUAL = 0, f_AD = 0, output_file = "",
     cat(sprintf("InDel: %i\n",sum(grepl("INDEL", vcf_df_output$VARIANT))))
     for(i in 1:n_muestras){
         cat(sprintf("Sample %s:\n", namescol_df[9 + i]))
-        cat(sprintf("Variations (Index > 0.6): %i\n", sum(vcf_df_output[, 6 + (2 * i)]/(vcf_df_output[, 5 + (2 * i)] + vcf_df_output[, 6 + (2 * i)]) > 0.6)))
-        cat(sprintf("heterozygosity (Index between 0.3 and 0.6): %i\n", sum(vcf_df_output[, 6 + (2 * i)] / (vcf_df_output[, 5 + (2 * i)] + vcf_df_output[, 6 + (2 * i)]) <= 0.6 &
-                                                                            vcf_df_output[, 6 + (2 * i)]/(vcf_df_output[, 5 + (2 * i)] + vcf_df_output[, 6 + (2 * i)]) >= 0.3)))
-        cat(sprintf("Reference (Index < 0.3): %i\n", sum(vcf_df_output[, 6 + (2 * i)]/(vcf_df_output[, 5 + (2 * i)] + vcf_df_output[, 6 + (2 * i)]) < 0.4)))
+        vcf_df_output[, paste("Index", sample_name[i], sep = "_")] <- vcf_df_output[, 6 + (2 * i)]/(vcf_df_output[, 5 + (2 * i)] + vcf_df_output[, 6 + (2 * i)])
+        cat(sprintf("Variations (Index > 0.6): %i\n", sum(vcf_df_output[, paste("Index", sample_name[i], sep = "_")] > 0.6)))
+        cat(sprintf("Heterozygosity (Index between 0.3 and 0.6): %i\n", sum(vcf_df_output[, paste("Index", sample_name[i], sep = "_")] <= 0.6 &
+                                                                            vcf_df_output[, paste("Index", sample_name[i], sep = "_")] >= 0.3)))
+        cat(sprintf("Reference (Index < 0.3): %i\n", sum(vcf_df_output[, paste("Index", sample_name[i], sep = "_")] < 0.3)))
     }
   }
   
