@@ -34,7 +34,7 @@ VCFStats <- function(vcf, standard = TRUE, Index = 0.70, QUAL = "", AD = "", sam
 
     n_filter <- length(fQUAL)
 
-    if (sample == ""){
+    if (sample[1] == ""){
         n_sample <- as.integer(length(grep("AD",colnames(vcf))) / 2)
         sample <- rep("Sample", n_sample)
         for (i in 1:n_sample) {
