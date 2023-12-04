@@ -10,7 +10,6 @@ SNPanalysis <- function(bed, snp, seq, type = "seq") {
 
     if (type == "indel") {
         if (class(snp_gene) == "NULL") {
-            message(sprintf("There are no INDELs for %s", as.character(bed[4])))
             return()
         }
         indel_gene <- snp_gene[snp_gene$VARIANT == "INDEL", ]
@@ -30,13 +29,9 @@ SNPanalysis <- function(bed, snp, seq, type = "seq") {
             
             n_indel <- nrow(indel_gene)
             for (i in 1:n_indel) {
-                if (nchar(indel_gene$REF[i]) - nchar(indel_gene$ALT[i]) %% 3 != 0) {
-                    indel_gene$check[i] <- 1
-                } else {
-                    indel_gene$check[i] <- 0
-                }
+                indel_gene$diff[i] <- (nchar(indel_gene$REF[i]) - nchar(indel_gene$ALT[i])) %% 3
             }
-            return(indel_gene[indel_gene$check == 1, -9])
+            return(indel_gene[indel_gene$diff != 0, ])
         } else {
             message(sprintf("There are no INDELs for %s", as.character(bed[4])))
             return()
